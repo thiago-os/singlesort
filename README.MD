@@ -1,4 +1,4 @@
-The Models class in (Models.py) calculates historical returns for any (one-way sorted) strategy given 3 matrices:
+The Models class (in Models.py) calculates historical returns for any (one-way sorted) strategy given 3 matrices:
 1. Asset returns universe
 2. Classification variable
 3. Portfolio weights (do not need to add up to one)
