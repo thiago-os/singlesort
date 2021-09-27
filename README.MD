@@ -7,8 +7,8 @@ Index must be sorted time-series and all matrices must use end of period convent
 (i.e., weights and classification variable are lagged internally).  
 The matrices must have identical fields and index.
 
-In addition, inform if we buy high/low values (of BM, for example) and how many target stocks. 
-Percentile cutoff points are not implemented yet.
+In addition, inform if we buy high/low values (of BM, for example) and how many target stocks (assetsN). 
+Percentile cutoff points are also implemented (between lowQuant and highQuant).
 
 The Jupyter notebook (test.ipynb) has an example and compares the results with the one of a small Excel 
 spreadsheet based on fake data (testData.xlsx).
