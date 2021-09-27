@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Obtains historical returns for *any* strategy.
+Obtains historical returns for "any" strategy that selects assets based on a
+given classification variable.
 
 Given: asset returns universe, classification variable, and possible
-portfolio weights, in addition to how (and how many) stocks are selected.
+portfolio weights, in addition to how (and how many / quantiles of) stocks
+are selected.
 
 Thiago de Oliveira Souza, September 2021
 """
@@ -21,7 +23,7 @@ class Models:
     The input matrices must have the same (ordered) index and the same columns
     (in the same order).
     Functions:
-        - save the strategy returns as a dataframe in the .performance 
+        - save the strategy returns as a dataframe in the .performance
         attribute.
         - Computes the historical performance of this model in terms
     of cumulative returns, and compares to an equal weighted portfolio in the
@@ -30,7 +32,8 @@ class Models:
     # key = defines the instance/model (ex: use as key in a model-dict)
     def __init__(self, key, baseReturns=None, classifVariable=None,
                  baseWeights=None, assetsN=None, name='model', basePrices=None,
-                 targetLow=False, benchmark='ew'):
+                 targetLow=False, benchmark='ew', 
+                 lowQuant=None, highQuant=None):
 
         self.key = key
 
@@ -45,6 +48,8 @@ class Models:
         self.targetLow = targetLow
         self.benchmark = benchmark
         self.assetsN = assetsN
+        self.lowQuant = lowQuant
+        self.highQuant = highQuant
 
         # Output (generated internally):
         self.performance = None
@@ -83,13 +88,37 @@ class Models:
                   'for baseReturns(prices), classifVariables and baseWeights.')
             return
 
-        # Create ranking based on classification variables
-        # *at the end of t* (not lagged!)
-        self.ranking = self.classifVariable.rank(axis=1,
-                                                 ascending=self.targetLow)
+        if self.assetsN and (self.lowQuant or self.highQuant):
+            print('Error: I am not calculating anything. '
+                  'Select *either* number of assets or target quantiles.')
+            return
 
-        # mask for assets selected *at the end of t* (not lagged!)
-        self.selectedAssets = self.ranking <= self.assetsN
+        elif self.assetsN:
+            # Create ranking based on classification variables
+            # *at the end of t* (not lagged!)
+            self.ranking = self.classifVariable.rank(axis=1,
+                                                     ascending=self.targetLow)
+
+            # mask for assets selected *at the end of t* (not lagged!)
+            self.selectedAssets = self.ranking <= self.assetsN
+
+        elif self.lowQuant and self.highQuant:
+            # Create (quantile) ranking based on classification variables
+            # *at the end of t* (not lagged!)
+            self.quantileRanking = (self.classifVariable.rank(axis=1,
+                                                              ascending=True)
+                                    .div(self.classifVariable.count(axis=1),
+                                         axis=0))
+
+            # mask for assets selected *at the end of t* (not lagged!)
+            self.selectedAssets = ((self.quantileRanking >= self.lowQuant)
+                                   & (self.quantileRanking <= self.highQuant))
+
+        else:
+            print('Error: I am not calculating anything. '
+                  'You must select *either* number of assets'
+                  ' or target quantiles.')
+            return
 
         # Calculate (normalized) portfolio weights *at the end of t*
         self.weights = (self.baseWeights[self.selectedAssets]
